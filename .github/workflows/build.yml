@@ -27,17 +27,14 @@ jobs:
 
     runs-on: windows-latest
     env:
-      libraryName: undefined
-      cmakeInstallationPath: undefined-installation
+      libraryName: mupdf
+      cmakeInstallationPath: mupdf-installation
       tagName: 1.24.0
     steps:
-    
-      - uses: actions/checkout@v4
-        with:
-          repository: mupdf.git/undefined
-          ref: ${{ env.tagName }}
-          path: ${{ env.libraryName }}
-          submodules: true
+      - run: |
+          git clone --recurse-submodules http://git.ghostscript.com/mupdf.git &&^
+          cd ${{ env.libraryName }} &&^
+          git checkout ${{ env.tagName }}
           
       - name: download compiler
         if: ${{  matrix.compiler.url }}
@@ -106,11 +103,13 @@ jobs:
             set CD_LINUX=%CD:\=/%
             gcc --version &&^
             cd ${{ env.libraryName }} &&^
-            cmake.exe -G"MinGW Makefiles" ^
-            -DCMAKE_BUILD_TYPE=Release ^
-            -DBUILD_SHARED_LIBS=OFF ^
-            -DCMAKE_INSTALL_PREFIX="cmake-build/${{ env.cmakeInstallationPath }}" -B./cmake-build &&^
-            cd cmake-build && ( cmake --build . --config Release && cmake --install .  || type .\CMakeFiles\CMakeError.log )  
+            mingw32-make
+            
+            # cmake.exe -G"MinGW Makefiles" ^
+            # -DCMAKE_BUILD_TYPE=Release ^
+            # -DBUILD_SHARED_LIBS=OFF ^
+            # -DCMAKE_INSTALL_PREFIX="cmake-build/${{ env.cmakeInstallationPath }}" -B./cmake-build &&^
+            # cd cmake-build && ( cmake --build . --config Release && cmake --install .  || type .\CMakeFiles\CMakeError.log )  
  
   # -DOpenSSL_DIR="%CD_LINUX%/openssl-v3.1.3-x86_64-8.1.0-release-posix-seh-rt_v6-rev0" ^
   # -DZLIB_ROOT="%CD_LINUX%/zlib-v1.2.13-mingw64-x86_64-posix-seh-rev0-8.1.0" ^
@@ -120,12 +119,12 @@ jobs:
         uses: thedoctor0/zip-release@master
         with:
           type: 'zip'
-          directory: "${{ env.libraryName }}/cmake-build/${{ env.cmakeInstallationPath }}"
+          directory: "${{ env.libraryName }}/${{ env.cmakeInstallationPath }}"
           filename: "${{ env.libraryName }}-${{ github.ref_name }}-${{ matrix.compiler.name }}.zip"
         
       - name: Release prebuilt
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "${{ env.libraryName }}/cmake-build/${{ env.cmakeInstallationPath }}/${{ env.libraryName }}-${{ github.ref_name }}-${{ matrix.compiler.name }}.zip"
+          artifacts: "${{ env.libraryName }}/${{ env.cmakeInstallationPath }}/${{ env.libraryName }}-${{ github.ref_name }}-${{ matrix.compiler.name }}.zip"
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
